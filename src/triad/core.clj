@@ -32,7 +32,7 @@
         (println newword)
         (formWord g l newword newused)))))
 
-(defn startWalk[mat]
+(defn startWalk [mat]
   (doseq [x (range (count mat))
           y (range (count (nth mat x)))]
     (println (formWord mat [x y] (getat mat [x y]) []))))
@@ -42,11 +42,11 @@
   (if (< pos (count word))
     (let [letter (nth word pos)]
       (if (contains? (get-in triad letters) letter)
-        (insert-triad triad (conj letters letter) (inc pos) word)
-        (insert-triad (assoc-in triad (conj letters letter) {}) (conj letters letter) (inc pos) word)))
+        (insert-word-in-triad triad (conj letters letter) (inc pos) word)
+        (insert-word-in-triad (assoc-in triad (conj letters letter) {}) (conj letters letter) (inc pos) word)))
     triad))
 
-(defn build-triad-dict[triad words]
+(defn build-triad-dict [triad words]
   (if (empty? words)
     triad
     (recur (insert-word-in-triad triad [] 0 (first words)) (rest words))))
@@ -59,7 +59,6 @@
   (neighbours mat 0 0)
   (neighbours mat [0 0])
   (startWalk mat)
-  (first dict)
   (println "starting to build dict triad")
   (build-triad-dict {} []))
 
