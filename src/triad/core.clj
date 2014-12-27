@@ -22,20 +22,20 @@
                   (if (and (not (and (= y b) (= x a))) (and (valid-pos? mat x) (valid-pos? mat y)))
                     [x y])))))
 
-
-
-(defn formWord [g [x y] word used]
+(defn all-words-from-position [g [x y] word used]
   (let [newused (conj used [x y])
         n (st/difference (set (neighbours g [x y])) (set newused))] 
-    (doseq  [l n]
-      (let [newword  (str word (getat g l))]
-        (println newword)
-        (formWord g l newword newused)))))
+    (flatten 
+      (into []
+            (for  [l n]
+              (let [newword  (str word (getat g l))]
+                ;(println newword)
+                (conj (all-words-from-position g l newword newused) newword)))))))
 
 (defn startWalk [mat]
   (doseq [x (range (count mat))
           y (range (count (nth mat x)))]
-    (println (formWord mat [x y] (getat mat [x y]) []))))
+    (println (all-words-from-position mat [x y] (getat mat [x y]) [] []))))
 
 
 (defn insert-word-in-triad [triad letters pos word]
@@ -51,15 +51,18 @@
     triad
     (recur (insert-word-in-triad triad [] 0 (first words)) (rest words))))
 
+(defn find-words-trie [trie mat new-pos word used-positions]
+  (cond 
+    (empty? (get-in trie word)) (println word)
+    :else (let [all-neig-pos (st/difference (set (neighbours mat new-pos)) (set (conj used-positions new-pos)))]
+            (doseq [pos all-neig-pos]
+              (find-words-trie trie mat pos (str word (getat pos)) (conj used-positions new-pos))))))
 
+(def english-words-trie (build-triad-dict {} english-words))
 
 (defn -main
   "I don't do a whole lot ... yet."
-  [& args]
-  (neighbours mat 0 0)
-  (neighbours mat [0 0])
-  (startWalk mat)
-  (println "starting to build dict triad")
-  (build-triad-dict {} []))
+  [& args])
+  
 
 
