@@ -4,12 +4,12 @@
             [clojure.string :as sr])
   (:gen-class))
 
-(def mat [[ "a" "b" "m" ]["d" "a" "p" ]["c" "a" "r"]])
+(def mat5 [[ "a" "c" "m" "b" "d"]["r" "a" "p" "n" "x" ] ["f" "e" "d" "f" "e"] ["r" "a" "z" "p" "n"]["c" "t" "o" "l" "f"]])
+(def mat4 [[ "a" "c" "m" "b"  ]["r" "a" "p" "n" ] ["f" "e" "d" "f"] ["r" "a" "z" "p"]])
+(def mat3 [[ "a" "c" "m" ]["r" "a" "p"] ["f" "e" "d"]])
 
 (def english-words (sr/split-lines (slurp "/usr/share/dict/words")))
 
-(defn in? [elem col]
-  (some #(= elem %) col))
 
 (defn getat[mat [x y]]
   (nth (nth mat y) x))
@@ -47,7 +47,7 @@
       (if (contains? (get-in triad letters) letter)
         (insert-word-in-triad triad (conj letters letter) (inc pos) word)
         (insert-word-in-triad (assoc-in triad (conj letters letter) {}) (conj letters letter) (inc pos) word)))
-    triad))
+    (assoc-in triad word (merge (get-in triad word) {:isWord true}))))
 
 (defn build-triad-dict [triad words]
   (if (empty? words)
@@ -59,18 +59,42 @@
     ;(nil? (get-in trie word)) (println (str "not a word: " word))
     (nil? (get-in trie word)) (identity word)
     (empty? (get-in trie word)) (println word)
-    :else (let [all-neig-pos (st/difference (set (neighbours mat new-pos)) (set (conj used-positions new-pos)))]
-            (doseq [pos all-neig-pos]
-              (find-words-trie trie mat pos (str word (getat mat pos)) (conj used-positions new-pos))))))
+    :else (do 
+            (if (get-in trie (conj (into [] (seq word)) :isWord)) (println word))
+            (let [all-neig-pos (st/difference (set (neighbours mat new-pos)) (set (conj used-positions new-pos)))]
+              (doseq [pos all-neig-pos]
+                (find-words-trie trie mat pos (str word (getat mat pos)) (conj used-positions new-pos)))))))
+
+(defn find-all-words-in-dic [dic mat]
+  (doseq [x (range (count mat))
+          y (range (count (nth mat x)))]
+    (println (filter (complement nil?) (map #(get dic %) (all-words-from-position mat [x y] (getat mat [x y]) []))))))
+
+  
 
 (defn find-all-word-in-trie [trie mat]
   (doseq [x (range (count mat))
           y (range (count (nth mat x)))]
     (find-words-trie trie mat [x y] (getat mat [x y]) [])))
 
-(def english-words-trie (build-triad-dict {} english-words))
+(defn build-dict-english-words [word-list]
+  (into {}
+        (for [word word-list]
+          (hash-map word word))))
 
+(defn build-trie-words [word-list]
+  (build-triad-dict {} word-list))
+
+(def english-dic (build-dict-english-words english-words))
+(def english-trie (build-trie-words english-words))
+
+(defn benchmark-finds [mat]
+  (time (find-all-word-in-trie english-trie mat))
+  (time (find-all-words-in-dic english-dic mat)))
+
+  
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (find-all-word-in-trie english-words-trie mat))
+  (time (find-all-word-in-trie english-trie mat3))
+  (time (find-all-words-in-dic english-dic mat3)))
